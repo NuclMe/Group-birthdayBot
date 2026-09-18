@@ -38,10 +38,14 @@ export function setupBot(config: AppConfig, database: Database): Bot {
       : Promise.resolve(),
   );
   bot.command('test_month', async (ctx) => {
-    if (isOwner(ctx, config)) await sendTestMonth(bot, database, config);
+    await sendTestMonth(bot, database, config);
   });
   bot.command('test_birthday', async (ctx) => {
-    if (isOwner(ctx, config)) await sendTestBirthdays(bot, database, config);
+    await sendTestBirthdays(bot, database, config);
+  });
+  bot.hears(/^\.test_(month|birthday)$/, async (ctx) => {
+    if (ctx.match[1] === 'month') await sendTestMonth(bot, database, config);
+    else await sendTestBirthdays(bot, database, config);
   });
 
   bot.on('message:document', async (ctx) => {
