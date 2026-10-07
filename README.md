@@ -16,7 +16,8 @@ Telegram-бот на TypeScript: принимает Excel от владельц�
 ## Локальный запуск через Docker
 
 1. Создайте бота через BotFather и скопируйте токен.
-2. Скопируйте `.env.example` в `.env` и заполните `BOT_TOKEN`, `OWNER_TELEGRAM_ID`, `TARGET_CHAT_ID`.
+2. Скопируйте `.env.example` в `.env` и заполните `BOT_TOKEN`, `OWNER_TELEGRAM_ID`, `TARGET_CHAT_ID`, а также придумайте пароль MongoDB: укажите его в `MONGO_ROOT_PASSWORD` и в `MONGODB_URI`.
+   Порт MongoDB наружу не публикуется, доступ только из контейнера бота. Учётные данные применяются при первом создании тома `mongodb_data`; если том уже существует без аутентификации, удалите его (`docker compose down -v`, данные будут потеряны) или создайте пользователя вручную.
 3. Запустите:
 
 ```bash
