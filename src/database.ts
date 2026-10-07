@@ -51,6 +51,10 @@ export class Database {
     return records;
   }
 
+  async releaseNotification(key: string): Promise<void> {
+    await this.notifications.deleteOne({ key });
+  }
+
   async claimNotification(key: string): Promise<boolean> {
     try {
       await this.notifications.insertOne({ key, sentAt: new Date() });

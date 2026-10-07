@@ -2,8 +2,11 @@ services:
   mongodb:
     image: mongo:8
     restart: unless-stopped
-    ports:
-      - '27017:27017'
+    # Порт намеренно не публикуется: бот подключается по внутренней сети compose.
+    # Для локального доступа с хоста используйте '127.0.0.1:27017:27017', но не '27017:27017'.
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?задайте MONGO_ROOT_USERNAME в .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?задайте MONGO_ROOT_PASSWORD в .env}
     volumes:
       - mongodb_data:/data/db
 

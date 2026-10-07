@@ -9,6 +9,22 @@ function isOwner(ctx: Context, config: AppConfig): boolean {
   return ctx.from?.id === config.ownerTelegramId;
 }
 
+const TELEGRAM_MESSAGE_LIMIT = 4000;
+
+function chunkLines(lines: string[]): string[] {
+  const chunks: string[] = [];
+  let current = '';
+  for (const line of lines) {
+    if (current && current.length + line.length + 1 > TELEGRAM_MESSAGE_LIMIT) {
+      chunks.push(current);
+      current = '';
+    }
+    current = current ? `${current}\n${line}` : line;
+  }
+  if (current) chunks.push(current);
+  return chunks;
+}
+
 export function setupBot(config: AppConfig, database: Database): Bot {
   const bot = new Bot(config.botToken);
   bot.command('start', (ctx) =>
@@ -21,16 +37,15 @@ export function setupBot(config: AppConfig, database: Database): Bot {
   bot.command('birthdays', async (ctx) => {
     if (!isOwner(ctx, config)) return;
     const records = await database.listBirthdays();
-    await ctx.reply(
-      records.length
-        ? records
-            .map(
-              (r) =>
-                `${r.id}: ${r.name} — ${String(r.birthdayDay).padStart(2, '0')}.${String(r.birthdayMonth).padStart(2, '0')}`,
-            )
-            .join('\n')
-        : 'Список пуст.',
+    if (!records.length) {
+      await ctx.reply('Список пуст.');
+      return;
+    }
+    const lines = records.map(
+      (r) =>
+        `${r.id}: ${r.name} — ${String(r.birthdayDay).padStart(2, '0')}.${String(r.birthdayMonth).padStart(2, '0')}`,
     );
+    for (const chunk of chunkLines(lines)) await ctx.reply(chunk);
   });
   bot.command('reload', (ctx) =>
     isOwner(ctx, config)
@@ -38,12 +53,15 @@ export function setupBot(config: AppConfig, database: Database): Bot {
       : Promise.resolve(),
   );
   bot.command('test_month', async (ctx) => {
+    if (!isOwner(ctx, config)) return;
     await sendTestMonth(bot, database, config);
   });
   bot.command('test_birthday', async (ctx) => {
+    if (!isOwner(ctx, config)) return;
     await sendTestBirthdays(bot, database, config);
   });
   bot.hears(/^\.test_(month|birthday)$/, async (ctx) => {
+    if (!isOwner(ctx, config)) return;
     if (ctx.match[1] === 'month') await sendTestMonth(bot, database, config);
     else await sendTestBirthdays(bot, database, config);
   });
@@ -73,6 +91,9 @@ export function setupBot(config: AppConfig, database: Database): Bot {
         `Импорт не выполнен: ${error instanceof Error ? error.message : 'неизвестная ошибка'}`,
       );
     }
+  });
+  bot.catch((error) => {
+    console.error('Error while handling update:', error.error);
   });
   return bot;
 }
